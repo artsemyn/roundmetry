@@ -1,0 +1,35 @@
+
+[functions.ai-evaluator]
+enabled = true
+verify_jwt = true
+import_map = "./functions/ai-evaluator/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/ai-evaluator/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/ai-evaluator/*.html" ]
+
+[functions.gemini-test]
+enabled = true
+verify_jwt = true
+import_map = "./functions/gemini-test/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/gemini-test/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/gemini-test/*.html" ]
+
+[db]
+port = 54323
+[functions.glb-to-stl-converter]
+enabled = true
+verify_jwt = true
+import_map = "./functions/glb-to-stl-converter/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/glb-to-stl-converter/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/glb-to-stl-converter/*.html" ]
