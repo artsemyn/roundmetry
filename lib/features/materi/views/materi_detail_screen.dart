@@ -55,10 +55,24 @@ class _MateriDetailScreenState extends State<MateriDetailScreen> {
   void _setModelVariant(String nodeName) {
     if (_currentNodeName == nodeName) return;
 
-    // Panggil fungsi global 'toggleVariant' yang ada di window JavaScript
-    (js.context['window'] as _Window).toggleVariant(nodeName.toJS);
-
-    _currentNodeName = nodeName;
+    try {
+      // Method 1: Using js_interop (preferred)
+      if (js.context.hasProperty('toggleVariant')) {
+        final window = js.context as _Window;
+        window.toggleVariant(nodeName.toJS);
+      }
+      // Method 2: Fallback using universal_html
+      else if (js.context['toggleVariant'] != null) {
+        js.context.callMethod('toggleVariant', [nodeName]);
+      }
+      else {
+        print('toggleVariant function not found in JavaScript context');
+      }
+      
+      _currentNodeName = nodeName;
+    } catch (e) {
+      print('Error calling toggleVariant: $e');
+    }
   }
 
   @override
@@ -204,35 +218,74 @@ class _LeftPanelWithModelState extends State<LeftPanelWithModel> {
     final int selectedIndex = widget.topik.daftarBab.indexWhere((b) => b.id == widget.selectedBabId);
 
     final String jsScript = """
-      const modelViewer = document.getElementById('$_modelViewerId');
-      const variantNames = ['RadiusLine', 'HeightLine', 'DiameterLine'];
-      
-      function hideAll() {
-        variantNames.forEach(name => {
-          const material = modelViewer.model.materials.find(m => m.name === name);
-          if (material) {
-            material.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 0]);
-          }
-        });
-      }
-
-      // Jadikan fungsi ini global agar bisa diakses dari Dart
-      window.toggleVariant = function(name) {
-        hideAll();
-        if (name === 'reset' || !variantNames.includes(name)) return;
-        const material = modelViewer.model.materials.find(m => m.name === name);
-        if (material) {
-          let color = [1, 1, 1, 1];
-          if (name === 'RadiusLine') color = [1, 0, 0, 1];
-          if (name === 'HeightLine') color = [0, 0, 1, 1];
-          if (name === 'DiameterLine') color = [0, 1, 0, 1];
-          material.pbrMetallicRoughness.setBaseColorFactor(color);
+      // Wait for model viewer to be ready
+      function initializeModelViewer() {
+        const modelViewer = document.getElementById('$_modelViewerId');
+        if (!modelViewer) {
+          console.log('Model viewer not found, retrying...');
+          setTimeout(initializeModelViewer, 100);
+          return;
         }
-      }
+        
+        const variantNames = ['RadiusLine', 'HeightLine', 'DiameterLine'];
+        
+        function hideAll() {
+          if (!modelViewer.model) return;
+          variantNames.forEach(name => {
+            const material = modelViewer.model.materials.find(m => m.name === name);
+            if (material && material.pbrMetallicRoughness) {
+              material.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 0]);
+            }
+          });
+        }
 
-      modelViewer.addEventListener('load', () => {
-        hideAll();
-      });
+        // Jadikan fungsi ini global agar bisa diakses dari Dart
+        window.toggleVariant = function(name) {
+          console.log('toggleVariant called with:', name);
+          try {
+            hideAll();
+            if (name === 'reset' || !variantNames.includes(name)) return;
+            
+            if (!modelViewer.model) {
+              console.log('Model not loaded yet');
+              return;
+            }
+            
+            const material = modelViewer.model.materials.find(m => m.name === name);
+            if (material && material.pbrMetallicRoughness) {
+              let color = [1, 1, 1, 1];
+              if (name === 'RadiusLine') color = [1, 0, 0, 1];
+              if (name === 'HeightLine') color = [0, 0, 1, 1];
+              if (name === 'DiameterLine') color = [0, 1, 0, 1];
+              material.pbrMetallicRoughness.setBaseColorFactor(color);
+            } else {
+              console.log('Material not found:', name);
+            }
+          } catch (error) {
+            console.error('Error in toggleVariant:', error);
+          }
+        }
+
+        modelViewer.addEventListener('load', () => {
+          console.log('Model loaded');
+          hideAll();
+        });
+        
+        // Also listen for model-visibility event in case load event is missed
+        modelViewer.addEventListener('model-visibility', () => {
+          console.log('Model visibility changed');
+          hideAll();
+        });
+        
+        console.log('Model viewer initialized');
+      }
+      
+      // Start initialization
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeModelViewer);
+      } else {
+        initializeModelViewer();
+      }
     """;
 
     return Container(
@@ -253,15 +306,13 @@ class _LeftPanelWithModelState extends State<LeftPanelWithModel> {
                 if (snapshot.hasError || !snapshot.hasData) {
                   return const Center(child: Text('Gagal memuat model 3D'));
                 }
-                
-    final dataUri = 'data:model/gltf-binary;base64,${base64Encode(snapshot.data!)}';
-                
-    return ModelViewer(
-                  id: _modelViewerId,
-                  src: dataUri,
-                  cameraControls: true,
-                  relatedJs: jsScript,
-                );
+                final dataUri = 'data:model/gltf-binary;base64,${base64Encode(snapshot.data!)}';      
+                return ModelViewer(
+                    id: _modelViewerId,
+                    src: dataUri,
+                    cameraControls: true,
+                    relatedJs: jsScript,
+                  );
               },
             ),
           ),
