@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:roundmetry/features/auth/views/login_screen.dart';
 import 'package:roundmetry/features/auth/views/register_screen.dart';
 import 'package:roundmetry/features/dashboard/views/dashboard_screen.dart';
-import 'package:roundmetry/features/materi/views/materi_detail_screen.dart';
+import 'package:roundmetry/features/materi/views/halaman_belajar_screen.dart';
 import 'package:roundmetry/features/materi/views/materi_screen.dart';
 import 'package:roundmetry/features/profil/views/profil_screen.dart';
 import 'package:roundmetry/features/quiz/views/quiz_screen.dart';
@@ -36,6 +36,18 @@ final router = GoRouter(
       path: '/register',
       builder: (context, state) => const RegisterScreen(),
     ),
+    GoRoute(
+      path: '/belajar/:babId/:langkahIndex',
+      builder: (context, state) {
+        final babId = state.pathParameters['babId']!;
+        // Ubah langkahIndex dari String menjadi integer
+        final langkahIndex = int.parse(state.pathParameters['langkahIndex']!);
+        return HalamanBelajarScreen(
+          babId: babId,
+          initialLangkahIndex: langkahIndex,
+        );
+      },
+    ),
     ShellRoute(
       builder: (context, state, child) {
         return MainLayout(child: child);
@@ -53,7 +65,7 @@ final router = GoRouter(
           path: '/materi/:babId',
           builder: (context, state) {
             final babId = state.pathParameters['babId']!;
-            return MateriDetailScreen(babId: babId);
+            return HalamanBelajarScreen(babId: babId);
           },
         ),
         GoRoute(

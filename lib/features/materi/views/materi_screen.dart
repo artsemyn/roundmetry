@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:roundmetry/core/models/materi_model.dart';
-import 'package:roundmetry/core/services/materi_service.dart';
+import 'package:roundmetry/core/models/materi_model.dart'; // Pastikan path ini benar
 
 class MateriScreen extends StatelessWidget {
   const MateriScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final materiService = MateriService();
+    // Di aplikasi nyata, Anda akan mengambil data ini dari Supabase.
+    // Untuk sekarang kita gunakan data dummy 'semuaBab' dari materi_model.dart.
+    // Kita buat daftar Topik Besar dari 'semuaBab'.
+    final semuaTopikBesar = [
+      TopikBesar(
+        id: "topik-tabung",
+        judul: "Bangun Ruang – Tabung",
+        deskripsi: "Pelajari semua tentang definisi, jaring-jaring, hingga volume tabung.",
+        daftarBab: semuaBab.where((bab) => bab.id.contains("tabung")).toList(),
+      ),
+      // Anda bisa menambahkan TopikBesar untuk Kerucut dan Bola di sini
+    ];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
@@ -17,54 +27,37 @@ class MateriScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 1,
       ),
-      body: FutureBuilder<List<TopikBesar>>(
-        future: materiService.fetchSemuaTopik(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Belum ada materi.'));
-          }
-
-          final semuaTopik = snapshot.data!;
-          return ListView.builder(
-            padding: const EdgeInsets.all(24),
-            itemCount: semuaTopik.length,
-            itemBuilder: (context, index) {
-              final topik = semuaTopik[index];
-              // --- UI KARTU YANG HILANG DITAMBAHKAN DI SINI ---
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
-                elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
-                    if (topik.daftarBab.isNotEmpty) {
-                      context.go('/materi/${topik.daftarBab.first.id}');
-                    }
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(topik.judul, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        Text(topik.deskripsi ?? '', style: TextStyle(color: Colors.grey.shade700)),
-                        const SizedBox(height: 8),
-                        Text('${topik.daftarBab.length} Bab', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(24),
+        itemCount: semuaTopikBesar.length,
+        itemBuilder: (context, index) {
+          final topik = semuaTopikBesar[index];
+          return Card(
+            margin: const EdgeInsets.only(bottom: 16),
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                // Jika topik memiliki bab, navigasi ke langkah pertama (indeks 0) dari bab pertama.
+                if (topik.daftarBab.isNotEmpty) {
+                  context.go('/belajar/${topik.daftarBab.first.id}/0');
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(topik.judul, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text(topik.deskripsi, style: TextStyle(color: Colors.grey.shade700)),
+                    const SizedBox(height: 8),
+                    Text('${topik.daftarBab.length} Bab', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                  ],
                 ),
-              );
-              // --- AKHIR DARI UI KARTU ---
-            },
+              ),
+            ),
           );
         },
       ),
